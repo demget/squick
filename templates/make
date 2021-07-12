@@ -1,0 +1,20 @@
+{{ header }}
+package {{ .Package }}
+
+type {{ .Model }} struct {
+	{{- range .Fields }}
+	{{ .Name }} {{ .Type }} `{{ range .Tags }}{{ .Name }}:"{{ .Value }}{{ if .Omitempty }},omitempty{{ end }}" {{ end }}`
+	{{- end }}
+	db *DB `{{ range .Tags }}{{ .Name }}:"-" {{ end }}`
+}
+
+{{ range .Operations }}
+{{ if eq .Name "base" }}
+{{ if in .Args "select" }}
+func (db *DB) {{ .Model }}By{{ .Key }}({{ lower .Key }} {{ .KeyType }}) ({{ lower .Model }} {{ .Model }}, _ error) {
+    const query = `SELECT * FROM {{ .Table }} WHERE {{ .TableKey }}={{ lower .Key }}`
+    return {{ lower .Mode }}, db.Get(&{{ lower .Model }}, q, {{ lower .Key }})
+}
+{{ end }}
+{{ end }}
+{{ end }}

@@ -1,1 +1,1 @@
-# Squid
+# Squick

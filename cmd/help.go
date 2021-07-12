@@ -26,6 +26,7 @@ Drivers:
     sqlite3              (unadapted for now)
 
 Options:
+    -force               Forces the recreation of the package (wipes out the entire directory).
     -package name        Generated package name, "database" by default.`
 
 const helpMake = `
