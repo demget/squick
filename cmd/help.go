@@ -9,25 +9,26 @@ Commands:
     init                Initializes a database package.
     make                Generates code for the specified table.
 
-Example:
-    squick init postgres
-    squick make readers: base
-    squick make books: base get(title,author,year) count
-    squick make reader_books: base(select,insert)`
-
-const helpInit = `
-Usage: squick init [options] <driver>
-
-Squick init initializes a database package.
-
 Drivers:
     postgres
     mysql                (unadapted for now)
     sqlite3              (unadapted for now)
 
+Example:
+    export SQUICK_DRIVER="postgres"
+    export SQUICK_URL="host=localhost sslmode=disable user=... password=... dbname=..."
+    squick init database
+    squick make base
+    squick make -table books get:id,title,author count
+    squick make -table reader_books base:select,insert`
+
+const helpInit = `
+Usage: squick init [options] <package>
+
+Squick init initializes a database package.
+
 Options:
-    -force               Forces the recreation of the package (wipes out the entire directory).
-    -package name        Generated package name, "database" by default.`
+    -force               Forces the recreation of the package (wipes out the entire directory).`
 
 const helpMake = `
 Usage: squick make [options] <table:operations>

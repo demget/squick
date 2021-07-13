@@ -5,13 +5,17 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/demget/squick"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 func main() {
 	log.SetFlags(0)
 	log.SetPrefix("squick: ")
+	flag := flag.NewFlagSet("squick", flag.ExitOnError)
 	flag.Usage = func() { fmt.Fprintln(os.Stderr, help) }
 
 	if len(os.Args) <= 1 {
@@ -19,62 +23,91 @@ func main() {
 		return
 	}
 
+	driver, ok := os.LookupEnv("SQUICK_DRIVER")
+	if !ok {
+		log.Fatal("SQUICK_DRIVER environment key is unset")
+	}
+
 	sq, err := squick.New()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	cmd := os.Args[len(os.Args)-2]
-	switch cmd {
+	switch os.Args[1] {
 	case "init":
-		usage := func() { fmt.Fprintln(os.Stderr, helpInit) }
 		if len(os.Args) <= 2 {
-			usage()
+			fmt.Fprintln(os.Stderr, helpInit)
 			return
 		}
 
-		driver := os.Args[len(os.Args)-1]
 		force := flag.Bool("force", false, "")
-		pkg := flag.String("package", "database", "")
-		flag.Parse()
+		flag.Parse(os.Args[2:])
 
-		if driver == "" {
-			usage()
-			return
-		}
-		if *pkg == "" {
-			log.Fatal("package option cannot be empty")
+		pkg := "database"
+		if args := flag.Args(); len(args) > 0 {
+			pkg = args[0]
 		}
 
 		if *force {
-			if err := os.RemoveAll(*pkg); err != nil {
+			if err := os.RemoveAll(pkg); err != nil {
 				log.Fatal(err)
 			}
 		}
 
-		if err := sq.Init(driver, *pkg); err != nil {
+		if err := os.WriteFile(".squick", []byte(pkg), 0700); err != nil {
+			log.Fatal(err)
+		}
+
+		ctx := squick.Context{
+			Driver:  driver,
+			Package: pkg,
+		}
+		if err := sq.Init(ctx); err != nil {
 			log.Fatal(err)
 		}
 	case "make":
-		usage := func() { fmt.Fprintln(os.Stderr, helpMake) }
 		if len(os.Args) <= 2 {
-			usage()
+			fmt.Fprintln(os.Stderr, helpMake)
 			return
 		}
 
-		stmt, err := squick.Parse(os.Args[len(os.Args)-1])
+		dburl, ok := os.LookupEnv("SQUICK_URL")
+		if !ok {
+			log.Fatal("SQUICK_URL environment key is unset")
+		}
+
+		db, err := sqlx.Open(driver, dburl)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer db.Close()
+
+		initfile, _ := os.ReadFile(".squick")
+		pkg := string(initfile)
+		if pkg == "" {
+			log.Fatal(`.squick file not found (use "squick init"`)
+		}
+
+		name := flag.String("name", "", "")
+		tags := flag.String("tags", "json", "")
+		flag.Parse(os.Args[2:])
+
+		stmt, err := squick.Parse(flag.Args())
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		name := flag.String("name", stmt.Model(), "")
-		flag.Parse()
-
 		if *name == "" {
-			log.Fatal("name option cannot be empty")
+			*name = stmt.Model()
 		}
 
-		if err := sq.Make(); err != nil {
+		ctx := squick.Context{
+			DB:      db,
+			Package: pkg,
+			Model:   *name,
+			Tags:    strings.Split(*tags, ","),
+		}
+		if err := sq.Make(ctx, stmt); err != nil {
 			log.Fatal(err)
 		}
 	}

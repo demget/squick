@@ -20,16 +20,13 @@ type Op struct {
 
 var reStmtOp = regexp.MustCompile(`\s+\((.*)\)`)
 
-func Parse(s string) (*Stmt, error) {
-	tableOps := strings.Split(s, ":")
-	if len(tableOps) != 2 {
-		return nil, errors.New("make statement should look like table:operations")
+func Parse(s []string) (*Stmt, error) {
+	if len(s) == 0 {
+		return nil, errors.New("make statement should look like table: [operations]")
 	}
 
-	stmt := &Stmt{Table: tableOps[0]}
-	ops := strings.Split(tableOps[1], " ")
-
-	for _, op := range ops {
+	stmt := &Stmt{Table: s[0]}
+	for _, op := range s[1:] {
 		if !strings.ContainsAny(op, "()") {
 			continue
 		}
