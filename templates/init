@@ -10,7 +10,7 @@ type DB struct {
 	*sqlx.DB
 }
 
-func New(url string) (*DB, error) {
+func Open(url string) (*DB, error) {
     db, err := sqlx.Open("{{ .Driver }}", url)
     if err != nil {
         return nil, err
