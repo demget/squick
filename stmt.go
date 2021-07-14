@@ -1,7 +1,6 @@
 package squick
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/iancoleman/strcase"
@@ -18,10 +17,6 @@ type Op struct {
 }
 
 func Parse(table string, ss []string) (*Stmt, error) {
-	if len(ss) == 0 {
-		return nil, errors.New("make statement should contain at least one operation")
-	}
-
 	stmt := &Stmt{Table: table}
 	for _, s := range ss {
 		op := Op{Name: s}
