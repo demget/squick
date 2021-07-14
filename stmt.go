@@ -2,7 +2,6 @@ package squick
 
 import (
 	"errors"
-	"regexp"
 	"strings"
 
 	"github.com/iancoleman/strcase"
@@ -18,29 +17,20 @@ type Op struct {
 	Args []string
 }
 
-var reStmtOp = regexp.MustCompile(`\s+\((.*)\)`)
-
-func Parse(s []string) (*Stmt, error) {
-	if len(s) == 0 {
-		return nil, errors.New("make statement should look like table: [operations]")
+func Parse(table string, ss []string) (*Stmt, error) {
+	if len(ss) == 0 {
+		return nil, errors.New("make statement should contain at least one operation")
 	}
 
-	stmt := &Stmt{Table: s[0]}
-	for _, op := range s[1:] {
-		if !strings.ContainsAny(op, "()") {
-			continue
+	stmt := &Stmt{Table: table}
+	for _, s := range ss {
+		op := Op{Name: s}
+		if strings.Contains(s, ":") {
+			args := strings.Split(s, ":")[1]
+			op.Args = strings.Split(args, ",")
 		}
 
-		match := reStmtOp.FindStringSubmatch(op)
-		if match == nil {
-			return nil, errors.New("make statement operation should look like operation(args,)")
-		}
-
-		args := strings.Split(match[1], ",")
-		stmt.Operations = append(stmt.Operations, Op{
-			Name: op,
-			Args: args,
-		})
+		stmt.Operations = append(stmt.Operations, op)
 	}
 
 	return stmt, nil

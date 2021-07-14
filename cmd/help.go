@@ -18,9 +18,10 @@ Example:
     export SQUICK_DRIVER="postgres"
     export SQUICK_URL="host=localhost sslmode=disable user=... password=... dbname=..."
     squick init database
-    squick make base
-    squick make -table books get:id,title,author count
-    squick make -table reader_books base:select,insert`
+    squick make select insert update delete
+    squick make -table books get:title,author select:year
+    squick make -table readers get set:last_visit_at
+    squick make -table reader_books insert update`
 
 const helpInit = `
 Usage: squick init [options] <package>
@@ -38,9 +39,13 @@ Squick make generates code for the specified table with specified operations.
 Options:
     -name                Generated model name, turned into singular PascalCase by default.
     -tags                Additional tags to define for the fields, json only by default.
+    -table               One specific table to generate model for.
 
 Operations:
-    base(ops)            Primary operations: select (by a primary key), insert, update, delete.
-    get(fields)          Get operations. To use certain fields list them inside the parens.
-    set(fields)          Set operations. To use certain fields list them inside the parens.
-    count(fields)        Count aggregation. To group by certain fields list them inside the parens.`
+    get                  Get by a certain field.      get:author  -> db.BookByAuthor(author)
+    select               Select multiple items.       select:year -> db.BooksByYear(year)
+    set                  Update a single field.       set:name    -> book.SetTitle(title)
+    update               Update entire model.         update      -> db.UpdateBook(id, database.Book{...})
+    insert               Insert a model.              insert      -> db.CreateBook(database.Book{...})
+    delete               Delete a model.              delete      -> db.DeleteBook(id)
+    count                Count aggregations.          count:year  -> db.CountBooksByYear(year)`

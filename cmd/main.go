@@ -15,6 +15,7 @@ import (
 func main() {
 	log.SetFlags(0)
 	log.SetPrefix("squick: ")
+
 	flag := flag.NewFlagSet("squick", flag.ExitOnError)
 	flag.Usage = func() { fmt.Fprintln(os.Stderr, help) }
 
@@ -90,9 +91,10 @@ func main() {
 
 		name := flag.String("name", "", "")
 		tags := flag.String("tags", "json", "")
+		table := flag.String("table", "*", "")
 		flag.Parse(os.Args[2:])
 
-		stmt, err := squick.Parse(flag.Args())
+		stmt, err := squick.Parse(*table, flag.Args())
 		if err != nil {
 			log.Fatal(err)
 		}
