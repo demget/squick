@@ -139,6 +139,15 @@ func (db *DB) Delete{{ $.Model }}({{ camel $.PrimaryKey }} {{ index $.ColumnType
     _, err = db.Exec(query, {{ camel $.PrimaryKey }})
     return err
 }
+
+{{ else if eq $op.Name "count" }}
+{{- range $arg := $op.Args -}}
+func (db *DB) Count{{ $.Model }}By{{ pascal $arg }}({{ camel $arg }} {{ index $.ColumnTypes $arg}}) (count int, _ error) {
+    const query = `SELECT COUNT(*) FROM {{ $.Table }} WHERE {{ $arg }}=$1`
+    return count, db.Get(&count, query, {{ $arg }})
+}
+
+{{ end -}}
 {{ end -}}
 {{ end -}}
 
