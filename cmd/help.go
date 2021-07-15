@@ -44,7 +44,7 @@ Options:
 Operations:
     get                  Get by a certain field.      get:author  -> db.BookByAuthor(author)
     select               Select multiple items.       select:year -> db.BooksByYear(year)
-    set                  Update a single field.       set:name    -> book.SetTitle(title)
+    set                  Update a single field.       set:title   -> book.SetTitle(title)
     update               Update entire model.         update      -> db.UpdateBook(id, database.Book{...})
     insert               Insert a model.              insert      -> db.CreateBook(database.Book{...})
     delete               Delete a model.              delete      -> db.DeleteBook(id)

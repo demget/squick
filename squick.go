@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go/format"
 	"os"
+	"strings"
 	"text/template"
 	"time"
 
@@ -25,6 +26,9 @@ var funcs = template.FuncMap{
 	"header": func() string {
 		return fmt.Sprintf(header, time.Now().Format(time.RFC3339))
 	},
+	"command": func() string {
+		return "// squick " + strings.Join(os.Args[1:], " ")
+	},
 	"in": func(a []string, v string) bool {
 		for _, s := range a {
 			if s == v {
@@ -33,7 +37,9 @@ var funcs = template.FuncMap{
 		}
 		return false
 	},
-	"camel": strcase.ToLowerCamel,
+	"camel":  strcase.ToLowerCamel,
+	"pascal": strcase.ToCamel,
+	"plural": plur.Plural,
 }
 
 type Squick struct {
@@ -93,27 +99,50 @@ func (s *Squick) Init(ctx Context) error {
 	return os.WriteFile(fmt.Sprintf("%s/%s.go", ctx.Package, ctx.Package), data, 0700)
 }
 
-func (s *Squick) Make(ctx Context, stmt *Stmt) error {
+func (s *Squick) Make(ctx Context, stmt Stmt) error {
+	const (
+		queryColumns = `
+			select column_name, data_type, udt_name
+			from information_schema.columns
+			where table_name=$1`
+		queryPrimary = `
+			select kcu.column_name
+			from information_schema.table_constraints tco
+			join information_schema.key_column_usage kcu
+				on kcu.constraint_name = tco.constraint_name
+				and kcu.constraint_schema = tco.constraint_schema
+				and kcu.constraint_name = tco.constraint_name
+			where kcu.table_name=$1 and tco.constraint_type='PRIMARY KEY'`
+	)
+
 	var cols []struct {
 		Name string `db:"column_name"`
 		Type string `db:"data_type"`
 		Udt  string `db:"udt_name"`
 	}
-	const query = `select column_name, data_type, udt_name from information_schema.columns where table_name=$1`
-	if err := ctx.DB.Select(&cols, query, stmt.Table); err != nil {
+	if err := ctx.DB.Select(&cols, queryColumns, stmt.Table); err != nil {
+		return err
+	}
+
+	var primaryKey string
+	if err := ctx.DB.Get(&primaryKey, queryPrimary, stmt.Table); err != nil {
 		return err
 	}
 
 	load := struct {
 		Context
-		Model      string
-		Imports    []string
-		Columns    []Column
-		Operations []Op
+		Stmt
+		Model       string
+		PrimaryKey  string
+		Imports     []string
+		Columns     []Column
+		ColumnTypes map[string]string
 	}{
-		Context:    ctx,
-		Model:      plur.Singular(ctx.Model),
-		Operations: stmt.Operations,
+		Context:     ctx,
+		Stmt:        stmt,
+		Model:       plur.Singular(ctx.Model),
+		PrimaryKey:  primaryKey,
+		ColumnTypes: make(map[string]string),
 	}
 
 	for _, col := range cols {
@@ -126,10 +155,13 @@ func (s *Squick) Make(ctx Context, stmt *Stmt) error {
 			load.Imports = append(load.Imports, imp)
 		}
 
+		colType += udtTypes[col.Udt]
+
+		load.ColumnTypes[col.Name] = colType
 		load.Columns = append(load.Columns, Column{
 			DBName:   col.Name,
 			Name:     strcase.ToCamel(col.Name),
-			Type:     colType + udtTypes[col.Udt],
+			Type:     colType,
 			Tags:     ctx.Tags,
 			Nullable: false, // TODO
 		})

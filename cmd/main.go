@@ -94,11 +94,7 @@ func main() {
 		table := flag.String("table", "*", "")
 		flag.Parse(os.Args[2:])
 
-		stmt, err := squick.Parse(*table, flag.Args())
-		if err != nil {
-			log.Fatal(err)
-		}
-
+		stmt := squick.Parse(*table, flag.Args())
 		if *name == "" {
 			*name = stmt.Model()
 		}
