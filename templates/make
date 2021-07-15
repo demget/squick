@@ -133,6 +133,12 @@ func (db *DB) Update{{ $.Model }}({{ camel $.PrimaryKey }} {{ index $.ColumnType
     return err
 }
 
+{{ else if eq $op.Name "delete" }}
+func (db *DB) Delete{{ $.Model }}({{ camel $.PrimaryKey }} {{ index $.ColumnTypes $.PrimaryKey }}) error {
+    const query = `DELETE FROM {{ $.Table }} WHERE {{ camel $.PrimaryKey }}=$1`
+    _, err = db.Exec(query, {{ camel $.PrimaryKey }})
+    return err
+}
 {{ end -}}
 {{ end -}}
 
