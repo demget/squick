@@ -3,7 +3,7 @@ package main
 const help = `
 Usage: squick <command> [arguments]
 
-Squick generates highly idiomatic Go code to interact with SQL database.
+Squick generates highly idiomatic Go code to interact with SQL databases.
 
 Commands:
     init                Initializes a database package.
@@ -18,10 +18,9 @@ Example:
     export SQUICK_DRIVER="postgres"
     export SQUICK_URL="host=localhost sslmode=disable user=... password=... dbname=..."
     squick init database
-    squick make select insert update delete
     squick make -table books get:title,author select:year
     squick make -table readers get set:last_visit_at
-    squick make -table reader_books insert update`
+    squick make -table reader_books insert update delete`
 
 const helpInit = `
 Usage: squick init [options] <package>
@@ -45,7 +44,7 @@ Operations:
     get                  Get by a certain field.      get:author  -> db.BookByAuthor(author)
     select               Select multiple items.       select:year -> db.BooksByYear(year)
     set                  Update a single field.       set:title   -> book.SetTitle(title)
-    update               Update entire model.         update      -> db.UpdateBook(id, database.Book{...})
+    update               Update an entire model.      update      -> db.UpdateBook(id, database.Book{...})
     insert               Insert a model.              insert      -> db.CreateBook(database.Book{...})
     delete               Delete a model.              delete      -> db.DeleteBook(id)
-    count                Count aggregations.          count:year  -> db.CountBooksByYear(year)`
+    count                Count by a field.            count:year  -> db.CountBooksByYear(year)`
