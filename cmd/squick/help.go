@@ -36,9 +36,9 @@ Usage: squick make [options] <table:operations>
 Squick make generates code for the specified table with specified operations.
 
 Options:
+    -table               One specific table to generate model for, required.
     -name                Generated model name, turned into singular PascalCase by default.
     -tags                Additional tags to define for the fields, json only by default.
-    -table               One specific table to generate model for.
 
 Operations:
     get                  Get by a certain field.      get:author  -> db.BookByAuthor(author)

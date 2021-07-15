@@ -3,6 +3,10 @@
 
 _Note: The code is a bit dirty at the moment, but someday I will spruce it up..._
 
+- [Bootstrap](#bootstrap)
+- [Models](#models)
+- [Roadmap](#roadmap)
+
 ## Bootstrap
 
 ```
@@ -101,3 +105,16 @@ db.UpdateReaderBook(id, database.Book{
 	Returned: true,
 })
 ```
+
+## Roadmap
+
+Here are some plans on this project. It's fair to say that `squick` is __unfinished__. It could have a lot more features and be more flexible, but for now it satisfies my requests and significantly helps me with the CRUD routine in the way I want it.
+
+- Clean up the code and templates
+- Make current basic operations more flexible and customizable
+- Add support for other drivers besides postgres
+- Cover with tests, add them to generated packages as well
+
+And some small missed features:
+- Deal with nullable fields
+- Empty `-table` option should mean to process every table in the database
