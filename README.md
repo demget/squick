@@ -1,11 +1,13 @@
 # Squick
 > `go install github.com/demget/squick/cmd/squick`
 
-_Note: The code is a bit dirty at the moment, but someday I will spruce it up._
+_Note: The code is a bit dirty at the moment, but someday I will spruce it up..._
 
 ## Bootstrap
 
-`$ squick init database`
+```
+$ squick init database
+```
 
 This will produce a package `database`, which holds initial `database.go` file and used to store further generated models and query functions.
 
@@ -17,7 +19,7 @@ if err != nil {
 
 // Now we can use wrapped db to interact with database
 // db.UserByID(...)
-// db.CreateUser(database.User{...})
+// db.InsertUser(database.User{...})
 ```
 
 ## Models
@@ -54,7 +56,9 @@ create table reader_books (
 
 `get` operation creates queries that retrieve information about single book by the listed fields. We also need to filter by a year, fetching multiple books.
 
-`$ squick make -table books get:title,author select:year`
+```
+$ squick make -table books get:title,author select:year
+```
 
 ```go
 book, _ := 
@@ -72,7 +76,9 @@ for _, book := range books {
 
 Now, we need an update function to actualize last visit time of the person came to the library. Setters are only available in the scope of the model.
 
-`$ squick make -table readers get set:last_visit_at`
+```
+$ squick make -table readers get set:last_visit_at
+```
 
 ```go
 reader, _ := db.ReaderByID(1)
@@ -81,10 +87,12 @@ reader.SetLastVisitAt(time.Now())
 
 And, finally, an insert operation to track taken books. In this example we use `update` operation instead of simple `set:returned`, just to show the difference (`update` operation allows to update several fields simultaneously).
 
-`$ squick make -table reader_books insert update`
+```
+$ squick make -table reader_books insert update
+```
 
 ```go
-id, _ := db.CreateReaderBook(database.Book{
+id, _ := db.InsertReaderBook(database.Book{
 	ReaderID: 1,
 	BookID:   20,
 })

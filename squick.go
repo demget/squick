@@ -132,11 +132,12 @@ func (s *Squick) Make(ctx Context, stmt Stmt) error {
 	load := struct {
 		Context
 		Stmt
-		Model       string
-		PrimaryKey  string
-		Imports     []string
-		Columns     []Column
-		ColumnTypes map[string]string
+		Model             string
+		PrimaryKey        string
+		Imports           []string
+		DependencyImports []string
+		Columns           []Column
+		ColumnTypes       map[string]string
 	}{
 		Context:     ctx,
 		Stmt:        stmt,
@@ -165,6 +166,13 @@ func (s *Squick) Make(ctx Context, stmt Stmt) error {
 			Tags:     ctx.Tags,
 			Nullable: false, // TODO
 		})
+	}
+
+	for _, op := range stmt.Operations {
+		if op.Name == "insert" || op.Name == "update" {
+			load.Imports = append(load.Imports, "reflect")
+			load.DependencyImports = append(load.DependencyImports, "github.com/Masterminds/squirrel")
+		}
 	}
 
 	var buf bytes.Buffer
