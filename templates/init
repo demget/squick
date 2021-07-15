@@ -17,3 +17,7 @@ func Open(url string) (*DB, error) {
     }
     return &DB{DB: db}, nil
 }
+
+type Force bool
+
+const F Force = true

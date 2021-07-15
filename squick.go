@@ -37,7 +37,12 @@ var funcs = template.FuncMap{
 		}
 		return false
 	},
-	"camel":  strcase.ToLowerCamel,
+	"camel": func(s string) string {
+		if s != "id" {
+			return strcase.ToLowerCamel(s)
+		}
+		return s
+	},
 	"pascal": strcase.ToCamel,
 	"plural": plur.Plural,
 }
@@ -132,17 +137,19 @@ func (s *Squick) Make(ctx Context, stmt Stmt) error {
 	load := struct {
 		Context
 		Stmt
-		Model             string
-		PrimaryKey        string
-		Imports           []string
-		DependencyImports []string
-		Columns           []Column
-		ColumnTypes       map[string]string
+		Model        string
+		PrimaryKey   string
+		Imports      []string
+		Dependencies []string
+		Columns      []Column
+		Blacklist    []string
+		ColumnTypes  map[string]string
 	}{
 		Context:     ctx,
 		Stmt:        stmt,
 		Model:       plur.Singular(ctx.Model),
 		PrimaryKey:  primaryKey,
+		Blacklist:   []string{"created_at", "updated_at", primaryKey},
 		ColumnTypes: make(map[string]string),
 	}
 
@@ -171,7 +178,7 @@ func (s *Squick) Make(ctx Context, stmt Stmt) error {
 	for _, op := range stmt.Operations {
 		if op.Name == "insert" || op.Name == "update" {
 			load.Imports = append(load.Imports, "reflect")
-			load.DependencyImports = append(load.DependencyImports, "github.com/Masterminds/squirrel")
+			load.Dependencies = append(load.Dependencies, "github.com/Masterminds/squirrel")
 		}
 	}
 
