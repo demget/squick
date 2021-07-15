@@ -1,6 +1,9 @@
 # Squick
+> `go install github.com/demget/squick/cmd/squick`
 
-## Initialize database package
+_Note: The code is a bit dirty at the moment, but someday I will spruce it up._
+
+## Bootstrap
 
 `$ squick init database`
 
@@ -13,11 +16,11 @@ if err != nil {
 }
 
 // Now we can use wrapped db to interact with database
-// db.User(...)
+// db.UserByID(...)
 // db.CreateUser(database.User{...})
 ```
 
-## Generate model and functions
+## Models
 
 Let's imagine we're developing a backend for library application. In our Postgres database we have simple `books`, `readers` and `reader_books` tables, and the goal is to quickly get some fancy query wrappers to deal with basic CRUD operations. We want to select an information about single or multiple books as well as change some reader's data and track taken books by him.
 
@@ -43,19 +46,19 @@ create table readers (
 create table reader_books (
     took_at         timestamp,
     id              serial primary key,
-    reader_id       int unique,
-    book_id         int unique,
+    reader_id       int,
+    book_id         int,
     returned        bool
 );
 ```
 
-We specify `get` operation to have a look on functions help to retrieve information about single book by a particular filter rule. Then we need to filter by a year, but fetching multiple books.
+`get` operation creates queries that retrieve information about single book by the listed fields. We also need to filter by a year, fetching multiple books.
 
 `$ squick make -table books get:title,author select:year`
 
 ```go
 book, _ := 
-	db.Book(1) // by id (primary key)
+	db.BookByID(1)
 	db.BookByTitle("Clockwork Orange") 
 	db.BookByAuthor("Jack London")
 ```
@@ -67,16 +70,16 @@ for _, book := range books {
 }
 ```
 
-Now, we need an update function to actualize last visit time of the person came to the library. Setters are only available in the scope of model.
+Now, we need an update function to actualize last visit time of the person came to the library. Setters are only available in the scope of the model.
 
 `$ squick make -table readers get set:last_visit_at`
 
 ```go
-reader, _ := db.Reader(readerID)
+reader, _ := db.ReaderByID(1)
 reader.SetLastVisitAt(time.Now())
 ```
 
-And, finally, an insert operation to track taken books. In this example we use `update` operation instead of simple `set:returned`, just to show the difference.
+And, finally, an insert operation to track taken books. In this example we use `update` operation instead of simple `set:returned`, just to show the difference (`update` operation allows to update several fields simultaneously).
 
 `$ squick make -table reader_books insert update`
 
