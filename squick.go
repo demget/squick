@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"go/format"
+	"log"
 	"os"
 	"strings"
 	"text/template"
@@ -52,6 +53,8 @@ type Squick struct {
 }
 
 type Context struct {
+	Verbose bool
+	Ignore  bool
 	DB      *sqlx.DB
 	Driver  string
 	Package string
@@ -154,9 +157,17 @@ func (s *Squick) Make(ctx Context, stmt Stmt) error {
 	}
 
 	for _, col := range cols {
+		if ctx.Verbose {
+			log.Printf("table=%s column=%s type=%s udt=%s\n", stmt.Table, col.Name, col.Type, col.Udt)
+		}
+
 		colType, ok := columnTypes[col.Type]
 		if !ok {
-			return fmt.Errorf("unsupported %s column type", col.Type)
+			if !ctx.Ignore {
+				return fmt.Errorf("unsupported %s column type", col.Type)
+			} else {
+				colType = "interface{}"
+			}
 		}
 
 		if imp, ok := columnImports[colType]; ok {
@@ -207,6 +218,7 @@ var columnTypes = map[string]string{
 	"text":              "string",
 	"json":              "types.JSONText",
 	"ARRAY":             "[]",
+	"USER-DEFINED":      "string", // TODO: distinguish enums
 
 	"time without time zone":      "time.Time",
 	"time with time zone":         "time.Time",

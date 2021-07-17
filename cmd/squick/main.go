@@ -89,6 +89,8 @@ func main() {
 			log.Fatal(`.squick file not found (use "squick init"`)
 		}
 
+		verbose := flag.Bool("v", false, "")
+		ignore := flag.Bool("ignore", false, "")
 		name := flag.String("name", "", "")
 		tags := flag.String("tags", "json", "")
 		table := flag.String("table", "*", "")
@@ -100,6 +102,8 @@ func main() {
 		}
 
 		ctx := squick.Context{
+			Verbose: *verbose,
+			Ignore:  *ignore,
 			DB:      db,
 			Package: pkg,
 			Model:   *name,

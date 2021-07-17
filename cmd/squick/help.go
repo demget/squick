@@ -36,6 +36,8 @@ Usage: squick make [options] <table:operations>
 Squick make generates code for the specified table with specified operations.
 
 Options:
+    -v                   Enables verbose debug output.
+    -ignore              Ignores unsupported column, interface{} type will be used instead.
     -table               One specific table to generate model for, required.
     -name                Generated model name, turned into singular PascalCase by default.
     -tags                Additional tags to define for the fields, json only by default.
