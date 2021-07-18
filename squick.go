@@ -188,6 +188,19 @@ func (s *Squick) Make(ctx Context, stmt Stmt) error {
 		if op.Name == "insert" || op.Name == "update" {
 			load.Imports = append(load.Imports, "reflect")
 			load.Dependencies = append(load.Dependencies, "github.com/Masterminds/squirrel")
+		} else {
+			for _, arg := range op.Args {
+				var exists bool
+				for _, col := range cols {
+					if arg == col.Name {
+						exists = true
+						break
+					}
+				}
+				if !exists {
+					log.Fatalf("column %s does not exist", arg)
+				}
+			}
 		}
 	}
 
