@@ -228,7 +228,7 @@ var columnTypes = map[string]string{
 	"serial":            "int",
 	"text":              "string",
 	"json":              "types.JSONText",
-	"ARRAY":             "[]",
+	"ARRAY":             "pq.",
 	"USER-DEFINED":      "string", // TODO: distinguish enums
 
 	"time without time zone":      "time.Time",
@@ -239,14 +239,16 @@ var columnTypes = map[string]string{
 
 var columnImports = map[string]string{
 	"time.Time":      "time",
+	"pq.":            "github.com/lib/pq",
 	"types.JSONText": "github.com/jmoiron/sqlx/types",
 }
 
 var udtTypes = map[string]string{
-	"_varchar": "string",
-	"_text":    "string",
-	"_int4":    "int",
-	"_int":     "int",
-	"_float4":  "float64",
-	"_bool":    "bool",
+	"_varchar": "StringArray",
+	"_text":    "StringArray",
+	"_int4":    "Int64Array",
+	"_int":     "Int32Array",
+	"_float4":  "Float64Array",
+	"_float":   "Float32Array",
+	"_bool":    "BoolArray",
 }
