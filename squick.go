@@ -72,6 +72,10 @@ type Column struct {
 	Nullable bool
 }
 
+func init() {
+	strcase.ConfigureAcronym("id", "ID")
+}
+
 func New() (*Squick, error) {
 	tpl, err := template.
 		New("squick").
