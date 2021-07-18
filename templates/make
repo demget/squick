@@ -52,9 +52,11 @@ func (db *DB) {{ plural $.Model }}By{{ pascal $arg }}({{ camel $arg }} {{ index 
     if err := db.Select(&{{ plural $model }}, query, {{ camel $arg }}); err != nil {
         return nil, err
     }
-    for _, {{ $model }} := range {{ plural $model }} {
-        {{ $model }}.db = db
+
+    for i := range {{ plural $model }} {
+        {{ plural $model }}[i].db = db
     }
+
     return {{ plural $model }}, nil
 }
 
