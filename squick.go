@@ -39,9 +39,11 @@ var funcs = template.FuncMap{
 		return false
 	},
 	"camel": func(s string) string {
-		if s != "id" {
-			return strcase.ToLowerCamel(s)
+		if s == "id" {
+			return s
 		}
+		s = strcase.ToLowerCamel(s)
+		s = strings.ReplaceAll(s, "Id", "ID")
 		return s
 	},
 	"pascal": strcase.ToCamel,
@@ -68,10 +70,6 @@ type Column struct {
 	Type     string
 	Tags     []string
 	Nullable bool
-}
-
-func init() {
-	strcase.ConfigureAcronym("id", "ID")
 }
 
 func New() (*Squick, error) {
@@ -134,7 +132,7 @@ func (s *Squick) Make(ctx Context, stmt Stmt) error {
 
 	var primaryKey string
 	if err := ctx.DB.Get(&primaryKey, queryPrimary, stmt.Table); err != nil {
-		return err
+		return err // TODO: make primary keys optional
 	}
 
 	load := struct {

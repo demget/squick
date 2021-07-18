@@ -49,7 +49,7 @@ func (db *DB) {{ plural $.Model }}By{{ pascal $arg }}({{ camel $arg }} {{ index 
     const query = `SELECT * FROM {{ $.Table }} WHERE {{ $arg }}=$1`
 
     var {{ plural $model }} []{{ $.Model }}
-    if err := db.Select(&{{ plural $model }}, query, {{ $arg }}); err != nil {
+    if err := db.Select(&{{ plural $model }}, query, {{ camel $arg }}); err != nil {
         return nil, err
     }
     for _, {{ $model }} := range {{ plural $model }} {
