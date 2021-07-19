@@ -215,6 +215,9 @@ func (s *Squick) Make(ctx Context, stmt Stmt) error {
 
 	data, err := format.Source(buf.Bytes())
 	if err != nil {
+		if ctx.Verbose {
+			log.Println(buf.String())
+		}
 		return err
 	}
 
