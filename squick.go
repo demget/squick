@@ -30,6 +30,12 @@ var funcs = template.FuncMap{
 	"command": func() string {
 		return "// squick " + strings.Join(os.Args[1:], " ")
 	},
+	"package": func(pkg string) string {
+		if !strings.Contains(pkg, "/") {
+			return pkg
+		}
+		return pkg[strings.LastIndex(pkg, "/")+1:]
+	},
 	"in": func(a []string, v string) bool {
 		for _, s := range a {
 			if s == v {
