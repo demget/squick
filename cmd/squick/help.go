@@ -28,7 +28,8 @@ Usage: squick init [options] <package>
 Squick init initializes a database package.
 
 Options:
-    -force               Forces the recreation of the package (wipes out the entire directory).`
+    -force               Forces the recreation of the package (wipes out the entire directory).
+    -dir                 Specifies the directory, in which the package has to be located.`
 
 const helpMake = `
 Usage: squick make [options] <table:operations>

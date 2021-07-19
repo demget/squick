@@ -1,23 +1,50 @@
 {{ header }}
-package {{ .Package }}
+package {{ package .Package }}
 
 import (
     "github.com/jmoiron/sqlx"
     _ "github.com/lib/pq"
 )
 
-type DB struct {
-	*sqlx.DB
-}
+const F Force = true
 
-func Open(url string) (*DB, error) {
+type (
+    DB interface {
+        {{ /* range .Models */ }}
+        {{- range .Operations -}}
+        {{- if eq .Name "get" }}
+        {{- range $arg := .Args }}
+        {{ $.Model }}By{{ pascal $arg }}({{ index $.ColumnTypes $arg}}) ({{ $.Model }}, error)
+        {{- end }}
+        {{- else if eq .Name "select" }}
+        {{- range $arg := .Args }}
+        {{ plural $.Model }}By{{ pascal $arg }}({{ index $.ColumnTypes $arg}}) ([]{{ $.Model }}, error)
+        {{- end }}
+        {{- else if eq .Name "insert" }}
+        Insert{{ $.Model }}({{ $.Model }}) ({{ index $.ColumnTypes $.PrimaryKey }}, error)
+        {{- else if eq .Name "update" }}
+        Update{{ $.Model }}({{ index $.ColumnTypes $.PrimaryKey }}, {{ $.Model }}, ...Force) error
+        {{- else if eq .Name "delete" }}
+        Delete{{ $.Model }}({{ index $.ColumnTypes $.PrimaryKey }}) error
+        {{- else if eq .Name "count" }}
+        {{- range $arg := .Args }}
+        Count{{ $.Model }}By{{ pascal $arg }}({{ index $.ColumnTypes $arg}}) (int, error)
+        {{- end }}
+        {{- end }}
+        {{- end }}
+    }
+
+    database struct {
+        *sqlx.DB
+    }
+
+    Force bool
+)
+
+func Open(url string) (DB, error) {
     db, err := sqlx.Open("{{ .Driver }}", url)
     if err != nil {
         return nil, err
     }
-    return &DB{DB: db}, nil
+    return &database{DB: db}, nil
 }
-
-type Force bool
-
-const F Force = true

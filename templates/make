@@ -9,7 +9,7 @@ import (
     {{- end }}
 
     {{ range .Dependencies }}
-        "{{ . }}"
+    "{{ . }}"
     {{- end }}
 )
 {{ end }}
@@ -18,26 +18,21 @@ type {{ .Model }} struct {
     {{- range $col := .Columns }}
     {{ .Name }} {{ .Type }} `db:"{{ .DBName }}"{{ range .Tags }} {{ . }}:"{{ camel $col.Name }}{{ if $col.Nullable }},omitempty{{ end }}"{{ end }}`
     {{- end }}
-
-    db *DB
 }
 
-{{- $model := camel $.Model }}
+{{- $model := camel .Model }}
 {{ range $op := .Operations }}
 {{- if eq $op.Name "set" -}}
 {{- range $arg := $op.Args -}}
-func ({{ $model }} *{{ $.Model }}) Set{{ pascal $arg }}({{ camel $arg }} {{ index $.ColumnTypes $arg}}) error {
-    {{ $model }}.{{ pascal $arg }} = {{ $arg }}
-    const query = `UPDATE {{ $.Table }} SET {{ $arg }}=$1 WHERE {{ $.PrimaryKey }}=$2`
-    _, err := {{ $model }}.db.Exec(query, {{ camel $arg }}, {{ $model }}.{{ pascal $.PrimaryKey }})
-    return err
+func ({{ $model }} *{{ $.Model }}) Set{{ pascal $arg }}(db DB, {{ camel $arg }} {{ index $.ColumnTypes $arg}}) error {
+    {{ $model }}.{{ pascal $arg }} = {{ camel $arg }}
+    return db.Update{{ $.Model }}({{ $model }}.{{ pascal $.PrimaryKey }}, {{ $.Model }}{ {{ pascal $arg }}: {{ camel $arg }} })
 }
 
 {{ end -}}
 {{- else if eq $op.Name "get" }}
 {{- range $arg := $op.Args -}}
-func (db *DB) {{ $.Model }}By{{ pascal $arg }}({{ camel $arg }} {{ index $.ColumnTypes $arg}}) ({{ $model }} {{ $.Model }}, _ error) {
-    {{ $model }}.db = db
+func (db *database) {{ $.Model }}By{{ pascal $arg }}({{ camel $arg }} {{ index $.ColumnTypes $arg}}) ({{ $model }} {{ $.Model }}, _ error) {
     const query = `SELECT * FROM {{ $.Table }} WHERE {{ $arg }}=$1`
     return {{ $model }}, db.Get(&{{ $model }}, query, {{ $arg }})
 }
@@ -45,7 +40,7 @@ func (db *DB) {{ $.Model }}By{{ pascal $arg }}({{ camel $arg }} {{ index $.Colum
 {{ end -}}
 {{- else if eq $op.Name "select" }}
 {{- range $arg := $op.Args -}}
-func (db *DB) {{ plural $.Model }}By{{ pascal $arg }}({{ camel $arg }} {{ index $.ColumnTypes $arg}}) ([]{{ $.Model }}, error) {
+func (db *database) {{ plural $.Model }}By{{ pascal $arg }}({{ camel $arg }} {{ index $.ColumnTypes $arg}}) ([]{{ $.Model }}, error) {
     const query = `SELECT * FROM {{ $.Table }} WHERE {{ $arg }}=$1`
 
     var {{ plural $model }} []{{ $.Model }}
@@ -53,22 +48,19 @@ func (db *DB) {{ plural $.Model }}By{{ pascal $arg }}({{ camel $arg }} {{ index 
         return nil, err
     }
 
-    for i := range {{ plural $model }} {
-        {{ plural $model }}[i].db = db
-    }
-
     return {{ plural $model }}, nil
 }
 
 {{ end -}}
 {{- else if eq $op.Name "insert" }}
-func (db *DB) Insert{{ $.Model }}({{ camel $.Model }} {{ $.Model }}) ({{ camel $.PrimaryKey}} {{ index $.ColumnTypes $.PrimaryKey }}, _ error) {
+func (db *database) Insert{{ $.Model }}({{ $model }} {{ $.Model }}) ({{ camel $.PrimaryKey}} {{ index $.ColumnTypes $.PrimaryKey }}, _ error) {
     data := map[string]interface{}{
         {{- range $.Columns }}
-        "{{ .DBName }}": {{ camel $.Model }}.{{ .Name }},
+        "{{ .DBName }}": {{ $model }}.{{ .Name }},
         {{- end }}
     }
-    for _, col := range {{ camel $.Model }}Columns {
+
+    for _, col := range {{ $model }}Columns {
         if reflect.ValueOf(data[col]).IsZero() {
             delete(data, col)
         }
@@ -101,20 +93,20 @@ func (db *DB) Insert{{ $.Model }}({{ camel $.Model }} {{ $.Model }}) ({{ camel $
     if rows.Next() {
         rows.Scan(&{{ camel $.PrimaryKey }})
     }
-
     return
 }
 
 {{ else if eq $op.Name "update" }}
-func (db *DB) Update{{ $.Model }}({{ camel $.PrimaryKey }} {{ index $.ColumnTypes $.PrimaryKey }}, {{ camel $.Model }} {{ $.Model }}, force ...Force) error {
+func (db *database) Update{{ $.Model }}({{ camel $.PrimaryKey }} {{ index $.ColumnTypes $.PrimaryKey }}, {{ $model }} {{ $.Model }}, force ...Force) error {
     data := map[string]interface{}{
         {{- range $.Columns -}}
         {{ if in $.Blacklist .DBName | not }}
-        "{{- .DBName }}": {{ camel $.Model }}.{{ .Name }},{{ end }}
+        "{{- .DBName }}": {{ $model }}.{{ .Name }},{{ end }}
         {{- end }}
     }
+
     if len(force) == 0 {
-        for _, col := range {{ camel $.Model }}Columns {
+        for _, col := range {{ $model }}Columns {
             if reflect.ValueOf(data[col]).IsZero() {
                 delete(data, col)
             }
@@ -136,7 +128,7 @@ func (db *DB) Update{{ $.Model }}({{ camel $.PrimaryKey }} {{ index $.ColumnType
 }
 
 {{ else if eq $op.Name "delete" }}
-func (db *DB) Delete{{ $.Model }}({{ camel $.PrimaryKey }} {{ index $.ColumnTypes $.PrimaryKey }}) error {
+func (db *database) Delete{{ $.Model }}({{ camel $.PrimaryKey }} {{ index $.ColumnTypes $.PrimaryKey }}) error {
     const query = `DELETE FROM {{ $.Table }} WHERE {{ camel $.PrimaryKey }}=$1`
     _, err := db.Exec(query, {{ camel $.PrimaryKey }})
     return err
@@ -144,7 +136,7 @@ func (db *DB) Delete{{ $.Model }}({{ camel $.PrimaryKey }} {{ index $.ColumnType
 
 {{ else if eq $op.Name "count" }}
 {{- range $arg := $op.Args -}}
-func (db *DB) Count{{ $.Model }}By{{ pascal $arg }}({{ camel $arg }} {{ index $.ColumnTypes $arg}}) (count int, _ error) {
+func (db *database) Count{{ $.Model }}By{{ pascal $arg }}({{ camel $arg }} {{ index $.ColumnTypes $arg}}) (count int, _ error) {
     const query = `SELECT COUNT(*) FROM {{ $.Table }} WHERE {{ $arg }}=$1`
     return count, db.Get(&count, query, {{ $arg }})
 }

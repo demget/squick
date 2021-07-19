@@ -1,0 +1,12 @@
+{{ header }}
+package mock
+
+import "{{ modpath }}/{{ .Package }}"
+
+type mock struct {
+    memory map[string][]interface{}
+}
+
+func New() {{ package .Package }}.DB {
+    return &mock{memory: make(map[string][]interface{})}
+}

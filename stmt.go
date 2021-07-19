@@ -19,18 +19,28 @@ type Op struct {
 func Parse(table string, ss []string) Stmt {
 	stmt := Stmt{Table: table}
 
+	var set, update bool
 	for _, s := range ss {
-		var op Op
+		op := Op{Name: s}
 
 		if strings.Contains(s, ":") {
 			opargs := strings.Split(s, ":")
 			op.Name = opargs[0]
 			op.Args = strings.Split(opargs[1], ",")
-		} else {
-			op.Name = s
+		}
+
+		if !set && op.Name == "set" {
+			set = true
+		}
+		if !update && op.Name == "update" {
+			update = true
 		}
 
 		stmt.Operations = append(stmt.Operations, op)
+	}
+
+	if set && !update {
+		stmt.Operations = append(stmt.Operations, Op{Name: "update"})
 	}
 
 	return stmt

@@ -1,0 +1,90 @@
+{{ header }}
+{{ command }}
+package mock
+
+import (
+    "database/sql"
+
+    "{{ modpath }}/{{ .Package }}"
+)
+
+{{ $model := camel .Model }}
+{{ $dbmodel := print (package .Package) "." .Model }}
+
+type {{ .Model }} struct {
+    {{ $dbmodel }}
+}
+
+{{ range $op := .Operations }}
+{{- if eq $op.Name "get" }}
+{{- range $arg := $op.Args -}}
+func (db *mock) {{ $.Model }}By{{ pascal $arg }}({{ camel $arg }} {{ index $.ColumnTypes $arg}}) ({{ $dbmodel }}, error) {
+    for _, v := range db.memory["{{ $.Table }}"] {
+        if vv := v.(*{{ $dbmodel }}); {{ camel $arg }} == vv.{{ pascal $arg }} {
+            return *vv, nil
+        }
+    }
+    return {{ $dbmodel }}{}, sql.ErrNoRows
+}
+
+{{ end -}}
+{{- else if eq $op.Name "select" }}
+{{- range $arg := $op.Args -}}
+func (db *mock) {{ plural $.Model }}By{{ pascal $arg }}({{ camel $arg }} {{ index $.ColumnTypes $arg}}) ([]{{ $dbmodel }}, error) {
+    var {{ plural $model }} []{{ $.Model }}
+    for _, v := range db.memory["{{ $.Table }}"] {
+        if v.(*{{ $dbmodel }}).{{ pascal $arg }} == {{ camel $arg }} {
+            {{ plural $model }} = append({{ plural $model }}, *v.(*{{ $dbmodel }}))
+        }
+    }
+    if len({{ plural $model }}) == 0 {
+        return nil, sql.ErrNoRows
+    }
+    return {{ plural $model }}, nil
+}
+
+{{ end -}}
+{{- else if eq $op.Name "insert" }}
+func (db *mock) Insert{{ $.Model }}({{ $model }} {{ $dbmodel }}) ({{ camel $.PrimaryKey}} {{ index $.ColumnTypes $.PrimaryKey }}, _ error) {
+    stor := db.memory["{{ $.Table }}"]
+    {{ if (index $.ColumnTypes $.PrimaryKey | isint) -}}
+    if {{ $model }}.{{ pascal $.PrimaryKey }} == 0 {
+        if len(stor) > 0 {
+            last := stor[len(stor)-1].(*{{ $dbmodel }})
+            {{ $model }}.{{ pascal $.PrimaryKey }} = last.{{ pascal $.PrimaryKey }} + 1
+        } else {
+            {{ $model }}.{{ pascal $.PrimaryKey }} = 1
+        }
+    }
+    {{ end -}}
+
+    stor = append(stor, &{{ $model }})
+    return {{ $model }}.{{ pascal $.PrimaryKey }}, nil
+}
+
+{{ else if eq $op.Name "update" }}
+func (db *mock) Update{{ $.Model }}({{ camel $.PrimaryKey }} {{ index $.ColumnTypes $.PrimaryKey }}, {{ $model }} {{ $.Model }}, _ ...{{ package $.Package}}.Force) error {
+    stor := db.memory["{{ $.Table }}"]
+    for i, v := range stor {
+        if v.(*{{ $dbmodel }}).{{ pascal $.PrimaryKey }} == {{ $model }}.{{ pascal $.PrimaryKey }} {
+            stor[i] = &{{ $model }}
+            return nil
+        }
+    }
+    return sql.ErrNoRows
+}
+
+{{ else if eq $op.Name "delete" }}
+func (db *mock) Delete{{ $.Model }}({{ camel $.PrimaryKey }} {{ index $.ColumnTypes $.PrimaryKey }}) error {
+
+}
+
+{{ else if eq $op.Name "count" }}
+{{- range $arg := $op.Args -}}
+func (db *mock) Count{{ $.Model }}By{{ pascal $arg }}({{ camel $arg }} {{ index $.ColumnTypes $arg}}) (count int, _ error) {
+
+}
+
+{{ end -}}
+{{ end -}}
+{{ end -}}

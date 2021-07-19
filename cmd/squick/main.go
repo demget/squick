@@ -42,6 +42,7 @@ func main() {
 		}
 
 		force := flag.Bool("force", false, "")
+		dir := flag.String("dir", "", "")
 		flag.Parse(os.Args[2:])
 
 		pkg := "database"
@@ -50,18 +51,17 @@ func main() {
 		}
 
 		if *force {
-			if err := os.RemoveAll(pkg); err != nil {
-				log.Fatal(err)
-			}
+			_ = os.Remove(fmt.Sprintf("%s/%s/%s.go", *dir, pkg, pkg))
 		}
 
-		if err := os.WriteFile(".squick", []byte(pkg), 0700); err != nil {
+		if err := os.WriteFile(".squick", []byte(*dir+"/"+pkg), 0700); err != nil {
 			log.Fatal(err)
 		}
 
 		ctx := squick.Context{
-			Driver:  driver,
-			Package: pkg,
+			Driver:    driver,
+			Package:   pkg,
+			Directory: *dir,
 		}
 		if err := sq.Init(ctx); err != nil {
 			log.Fatal(err)
@@ -93,6 +93,7 @@ func main() {
 		ignore := flag.Bool("ignore", false, "")
 		name := flag.String("name", "", "")
 		tags := flag.String("tags", "json", "")
+		mock := flag.Bool("mock", false, "")
 		table := flag.String("table", "*", "")
 		flag.Parse(os.Args[2:])
 
@@ -102,10 +103,12 @@ func main() {
 		}
 
 		ctx := squick.Context{
+			Driver:  driver,
+			Package: pkg,
+			DB:      db,
 			Verbose: *verbose,
 			Ignore:  *ignore,
-			DB:      db,
-			Package: pkg,
+			Mock:    *mock,
 			Model:   *name,
 			Tags:    strings.Split(*tags, ","),
 		}
