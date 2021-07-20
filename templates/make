@@ -2,14 +2,14 @@
 {{ command }}
 package {{ package .Package }}
 
-{{ if .Imports }}
+{{ if or .Imports .Dependencies }}
 import (
     {{ range .Imports }}
     "{{ . }}"
     {{- end }}
 
     {{ range .Dependencies }}
-        "{{ . }}"
+    "{{ . }}"
     {{- end }}
 )
 {{ end }}
@@ -27,7 +27,7 @@ type {{ .Model }} struct {
 {{- if eq $op.Name "set" -}}
 {{- range $arg := $op.Args -}}
 func ({{ $model }} *{{ $.Model }}) Set{{ pascal $arg }}({{ camel $arg }} {{ index $.ColumnTypes $arg}}) error {
-    {{ $model }}.{{ pascal $arg }} = {{ $arg }}
+    {{ $model }}.{{ pascal $arg }} = {{ camel $arg }}
     const query = `UPDATE {{ $.Table }} SET {{ $arg }}=$1 WHERE {{ $.PrimaryKey }}=$2`
     _, err := {{ $model }}.db.Exec(query, {{ camel $arg }}, {{ $model }}.{{ pascal $.PrimaryKey }})
     return err
@@ -39,7 +39,7 @@ func ({{ $model }} *{{ $.Model }}) Set{{ pascal $arg }}({{ camel $arg }} {{ inde
 func (db *DB) {{ $.Model }}By{{ pascal $arg }}({{ camel $arg }} {{ index $.ColumnTypes $arg}}) ({{ $model }} {{ $.Model }}, _ error) {
     {{ $model }}.db = db
     const query = `SELECT * FROM {{ $.Table }} WHERE {{ $arg }}=$1`
-    return {{ $model }}, db.Get(&{{ $model }}, query, {{ $arg }})
+    return {{ $model }}, db.Get(&{{ $model }}, query, {{ camel $arg }})
 }
 
 {{ end -}}

@@ -153,7 +153,6 @@ func (s *Squick) Make(ctx Context, stmt Stmt) error {
 		}
 
 		colType += udtTypes[col.Udt]
-
 		load.ColumnTypes[col.Name] = colType
 		load.Columns = append(load.Columns, Column{
 			DBName:   col.Name,
