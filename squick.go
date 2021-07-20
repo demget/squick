@@ -10,7 +10,6 @@ import (
 	"text/template"
 
 	"github.com/gertd/go-pluralize"
-	"github.com/iancoleman/strcase"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -43,10 +42,6 @@ type Column struct {
 	Type     string
 	Tags     []string
 	Nullable bool
-}
-
-func init() {
-	strcase.ConfigureAcronym("id", "ID")
 }
 
 func New() (*Squick, error) {
