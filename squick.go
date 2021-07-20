@@ -226,8 +226,10 @@ var columnDependencies = map[string]string{
 var udtTypes = map[string]string{
 	"_varchar": "StringArray",
 	"_text":    "StringArray",
-	"_int4":    "Int64Array",
+	"_int4":    "Int32Array",
 	"_int":     "Int32Array",
+	"_bigint4": "Int64Array",
+	"_bigint":  "Int64Array",
 	"_float4":  "Float64Array",
 	"_float":   "Float32Array",
 	"_bool":    "BoolArray",
