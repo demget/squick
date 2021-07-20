@@ -148,6 +148,9 @@ func (s *Squick) Make(ctx Context, stmt Stmt) error {
 		if imp, ok := columnImports[colType]; ok {
 			load.Imports = append(load.Imports, imp)
 		}
+		if dep, ok := columnDependencies[colType]; ok {
+			load.Dependencies = append(load.Dependencies, dep)
+		}
 
 		colType += udtTypes[col.Udt]
 
@@ -218,7 +221,10 @@ var columnTypes = map[string]string{
 }
 
 var columnImports = map[string]string{
-	"time.Time":      "time",
+	"time.Time": "time",
+}
+
+var columnDependencies = map[string]string{
 	"pq.":            "github.com/lib/pq",
 	"types.JSONText": "github.com/jmoiron/sqlx/types",
 }
