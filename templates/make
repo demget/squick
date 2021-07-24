@@ -28,7 +28,7 @@ type {{ .Model }} struct {
 {{- range $arg := $op.Args -}}
 func ({{ $model }} *{{ $.Model }}) Set{{ pascal $arg }}({{ camel $arg }} {{ index $.ColumnTypes $arg}}) error {
     {{ $model }}.{{ pascal $arg }} = {{ camel $arg }}
-    const query = `UPDATE {{ $.Table }} SET {{ $arg }}=$1 WHERE {{ $.PrimaryKey }}=$2`
+    const query = `UPDATE {{ $.Table }} SET {{ $arg }}=$1{{if $.UpdatedField }}, {{ $.UpdatedField}}=now(){{ end }} WHERE {{ $.PrimaryKey }}=$2`
     _, err := {{ $model }}.db.Exec(query, {{ camel $arg }}, {{ $model }}.{{ pascal $.PrimaryKey }})
     return err
 }
@@ -108,6 +108,7 @@ func (db *DB) Insert{{ $.Model }}({{ camel $.Model }} {{ $.Model }}) ({{ camel $
 {{ else if eq $op.Name "update" }}
 func (db *DB) Update{{ $.Model }}({{ camel $.PrimaryKey }} {{ index $.ColumnTypes $.PrimaryKey }}, {{ camel $.Model }} {{ $.Model }}, force ...Force) error {
     data := map[string]interface{}{
+        {{ if $.UpdatedField }}"{{ $.UpdatedField}}": time.Now(),{{ end }}
         {{- range $.Columns -}}
         {{ if in $.Blacklist .DBName | not }}
         "{{- .DBName }}": {{ camel $.Model }}.{{ .Name }},{{ end }}

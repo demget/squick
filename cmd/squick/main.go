@@ -93,6 +93,7 @@ func main() {
 		ignore := flag.Bool("ignore", false, "")
 		name := flag.String("name", "", "")
 		tags := flag.String("tags", "json", "")
+		updated := flag.String("updated", "", "")
 		table := flag.String("table", "*", "")
 		flag.Parse(os.Args[2:])
 
@@ -102,12 +103,13 @@ func main() {
 		}
 
 		ctx := squick.Context{
-			Verbose: *verbose,
-			Ignore:  *ignore,
-			DB:      db,
-			Package: pkg,
-			Model:   *name,
-			Tags:    strings.Split(*tags, ","),
+			Verbose:      *verbose,
+			Ignore:       *ignore,
+			DB:           db,
+			Package:      pkg,
+			Model:        *name,
+			Tags:         strings.Split(*tags, ","),
+			UpdatedField: *updated,
 		}
 		if err := sq.Make(ctx, stmt); err != nil {
 			log.Fatal(err)

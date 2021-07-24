@@ -27,13 +27,14 @@ type Squick struct {
 }
 
 type Context struct {
-	Verbose bool
-	Ignore  bool
-	DB      *sqlx.DB
-	Driver  string
-	Package string
-	Model   string
-	Tags    []string
+	Verbose      bool
+	Ignore       bool
+	DB           *sqlx.DB
+	Driver       string
+	Package      string
+	Model        string
+	Tags         []string
+	UpdatedField string
 }
 
 type Column struct {
@@ -156,6 +157,16 @@ func (s *Squick) Make(ctx Context, stmt Stmt) error {
 			Tags:     ctx.Tags,
 			Nullable: false, // TODO
 		})
+	}
+
+	if load.UpdatedField == "" {
+		if t, ok := load.ColumnTypes["updated_at"]; ok && t == "time.Time" {
+			load.UpdatedField = "updated_at"
+		}
+	} else {
+		if t, ok := load.ColumnTypes[load.UpdatedField]; !ok || t != "time.Time" {
+			load.UpdatedField = ""
+		}
 	}
 
 	for _, op := range stmt.Operations {

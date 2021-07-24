@@ -41,6 +41,7 @@ Options:
     -table               One specific table to generate model for, required.
     -name                Generated model name, turned into singular PascalCase by default.
     -tags                Additional tags to define for the fields, json only by default.
+    -updated             Indicates a field, which has to be set to the latest time on each updating query.
 
 Operations:
     get                  Get by a certain field.      get:author  -> db.BookByAuthor(author)
