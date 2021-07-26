@@ -215,6 +215,7 @@ var columnTypes = map[string]string{
 	"real":              "float64",
 	"serial":            "int",
 	"text":              "string",
+	"numeric":           "string",
 	"json":              "types.JSONText",
 	"ARRAY":             "pq.",
 	"USER-DEFINED":      "string", // TODO: distinguish enums
