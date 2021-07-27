@@ -27,9 +27,12 @@ type Squick struct {
 }
 
 type Context struct {
+	DB      *sqlx.DB
+	MaxOpen int
+	MaxIdle int
+
 	Verbose      bool
 	Ignore       bool
-	DB           *sqlx.DB
 	Driver       string
 	Package      string
 	Model        string

@@ -28,7 +28,9 @@ Usage: squick init [options] <package>
 Squick init initializes a database package.
 
 Options:
-    -force               Forces the recreation of the package (wipes out the entire directory).`
+    -force               Forces the recreation of the package (wipes out the entire directory).
+    -max-open            Sets the maximum number of connections in the idle connection pool.
+    -max-idle            Sets the maximum number of open connections to the database.`
 
 const helpMake = `
 Usage: squick make [options] <table:operations>
