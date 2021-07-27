@@ -114,6 +114,7 @@ Here are some plans on this project. It's fair to say that `squick` is __unfinis
 - Make current basic operations more flexible and customizable
 - Add support for other drivers besides postgres
 - Cover with tests, add them to generated packages as well
+- Add mock generation for testing purposes
 
 And some small missed features:
 - Deal with nullable fields
