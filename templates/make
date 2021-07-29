@@ -16,7 +16,7 @@ import (
 
 type {{ .Model }} struct {
     {{- range $col := .Columns }}
-    {{ .Name }} {{ .Type }} `db:"{{ .DBName }}"{{ range .Tags }} {{ . }}:"{{ camel $col.Name }}{{ if $col.Nullable }},omitempty{{ end }}"{{ end }}`
+    {{ .Name }} {{ if .Nullable }}*{{ end }}{{ .Type }} `db:"{{ .DBName }}"{{ range .Tags }} {{ . }}:"{{ camel $col.Name }}{{ if $col.Nullable }},omitempty{{ end }}"{{ end }}`
     {{- end }}
 
     db *DB
@@ -27,7 +27,7 @@ type {{ .Model }} struct {
 {{- if eq $op.Name "set" -}}
 {{- range $arg := $op.Args -}}
 func ({{ $model }} *{{ $.Model }}) Set{{ pascal $arg }}({{ camel $arg }} {{ index $.ColumnTypes $arg}}) error {
-    {{ $model }}.{{ pascal $arg }} = {{ camel $arg }}
+    {{ $model }}.{{ pascal $arg }} = {{ if index $.ColumnNullable $arg }}&{{ end }}{{ camel $arg }}
     const query = `UPDATE {{ $.Table }} SET {{ $arg }}=$1{{ if and $.UpdatedField (eq $arg $.UpdatedField | not) }}, {{ $.UpdatedField}}=now(){{ end }} WHERE {{ $.PrimaryKey }}=$2`
     _, err := {{ $model }}.db.Exec(query, {{ camel $arg }}, {{ $model }}.{{ pascal $.PrimaryKey }})
     return err
@@ -65,7 +65,7 @@ func (db *DB) {{ plural $.Model }}By{{ pascal $arg }}({{ camel $arg }} {{ index 
 func (db *DB) Insert{{ $.Model }}({{ camel $.Model }} {{ $.Model }}) ({{ camel $.PrimaryKey}} {{ index $.ColumnTypes $.PrimaryKey }}, _ error) {
     data := map[string]interface{}{
         {{- range $.Columns }}
-        "{{ .DBName }}": {{ camel $.Model }}.{{ .Name }},
+        "{{ .DBName }}": {{ if index $.ColumnNullable .Name }}*{{ end }}{{ camel $.Model }}.{{ .Name }},
         {{- end }}
     }
     for _, col := range {{ camel $.Model }}Columns {
@@ -108,10 +108,10 @@ func (db *DB) Insert{{ $.Model }}({{ camel $.Model }} {{ $.Model }}) ({{ camel $
 {{ else if eq $op.Name "update" }}
 func (db *DB) Update{{ $.Model }}({{ camel $.PrimaryKey }} {{ index $.ColumnTypes $.PrimaryKey }}, {{ camel $.Model }} {{ $.Model }}, force ...Force) error {
     data := map[string]interface{}{
-        {{ if $.UpdatedField }}"{{ $.UpdatedField}}": time.Now(),{{ end }}
+        {{ if $.UpdatedField }}"{{ $.UpdatedField }}": time.Now(),{{ end }}
         {{- range $.Columns -}}
         {{ if in $.Blacklist .DBName | not }}
-        "{{- .DBName }}": {{ camel $.Model }}.{{ .Name }},{{ end }}
+        "{{- .DBName }}": {{ if index $.ColumnNullable .Name }}*{{ end }}{{ camel $.Model }}.{{ .Name }},{{ end }}
         {{- end }}
     }
     if len(force) == 0 {

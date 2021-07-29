@@ -84,7 +84,7 @@ func (s *Squick) Init(ctx Context) error {
 func (s *Squick) Make(ctx Context, stmt Stmt) error {
 	const (
 		queryColumns = `
-			select column_name, data_type, udt_name
+			select column_name, data_type, udt_name, is_nullable
 			from information_schema.columns
 			where table_name=$1`
 		queryPrimary = `
@@ -98,9 +98,10 @@ func (s *Squick) Make(ctx Context, stmt Stmt) error {
 	)
 
 	var cols []struct {
-		Name string `db:"column_name"`
-		Type string `db:"data_type"`
-		Udt  string `db:"udt_name"`
+		Name     string `db:"column_name"`
+		Type     string `db:"data_type"`
+		Udt      string `db:"udt_name"`
+		Nullable string `db:"is_nullable"`
 	}
 	if err := ctx.DB.Select(&cols, queryColumns, stmt.Table); err != nil {
 		return err
@@ -114,25 +115,32 @@ func (s *Squick) Make(ctx Context, stmt Stmt) error {
 	load := struct {
 		Context
 		Stmt
-		Model        string
-		PrimaryKey   string
-		Imports      []string
-		Dependencies []string
-		Columns      []Column
-		Blacklist    []string
-		ColumnTypes  map[string]string
+		Model          string
+		PrimaryKey     string
+		Imports        []string
+		Dependencies   []string
+		Columns        []Column
+		Blacklist      []string
+		ColumnTypes    map[string]string
+		ColumnNullable map[string]bool
 	}{
-		Context:     ctx,
-		Stmt:        stmt,
-		Model:       plur.Singular(ctx.Model),
-		PrimaryKey:  primaryKey,
-		Blacklist:   []string{"created_at", "updated_at", primaryKey},
-		ColumnTypes: make(map[string]string),
+		Context:        ctx,
+		Stmt:           stmt,
+		Model:          plur.Singular(ctx.Model),
+		PrimaryKey:     primaryKey,
+		Blacklist:      []string{"created_at", "updated_at", primaryKey},
+		ColumnTypes:    make(map[string]string),
+		ColumnNullable: make(map[string]bool),
 	}
 
 	for _, col := range cols {
 		if ctx.Verbose {
 			log.Printf("table=%s column=%s type=%s udt=%s\n", stmt.Table, col.Name, col.Type, col.Udt)
+		}
+
+		var nullable bool
+		if col.Type != "json" && col.Type != "ARRAY" {
+			nullable = col.Nullable == "YES"
 		}
 
 		colType, ok := columnTypes[col.Type]
@@ -153,12 +161,14 @@ func (s *Squick) Make(ctx Context, stmt Stmt) error {
 
 		colType += udtTypes[col.Udt]
 		load.ColumnTypes[col.Name] = colType
+		load.ColumnNullable[col.Name] = nullable
+
 		load.Columns = append(load.Columns, Column{
 			DBName:   col.Name,
 			Name:     toPascalCase(col.Name),
 			Type:     colType,
 			Tags:     ctx.Tags,
-			Nullable: false, // TODO
+			Nullable: nullable,
 		})
 	}
 
