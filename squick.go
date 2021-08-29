@@ -229,6 +229,7 @@ var columnTypes = map[string]string{
 	"serial":            "int",
 	"text":              "string",
 	"numeric":           "string",
+	"uuid":              "string",
 	"json":              "types.JSONText",
 	"ARRAY":             "pq.",
 	"USER-DEFINED":      "string", // TODO: distinguish enums
