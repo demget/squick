@@ -69,7 +69,7 @@ func (db *DB) Insert{{ $.Model }}({{ camel $.Model }} {{ $.Model }}) ({{ camel $
         {{- end }}
     }
     for _, col := range {{ camel $.Model }}Columns {
-        if reflect.ValueOf(data[col]).IsZero() {
+        if v, ok := data[col]; ok && reflect.ValueOf(v).IsZero() {
             delete(data, col)
         }
     }
@@ -116,7 +116,7 @@ func (db *DB) Update{{ $.Model }}({{ camel $.PrimaryKey }} {{ index $.ColumnType
     }
     if len(force) == 0 {
         for _, col := range {{ camel $.Model }}Columns {
-            if reflect.ValueOf(data[col]).IsZero() {
+            if v, ok := data[col]; ok && reflect.ValueOf(v).IsZero() {
                 delete(data, col)
             }
         }
