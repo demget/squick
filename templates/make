@@ -98,11 +98,15 @@ func (db *DB) Insert{{ $.Model }}({{ camel $.Model }} {{ $.Model }}) ({{ camel $
     if err != nil {
         return {{ camel $.PrimaryKey }}, err
     }
+    defer rows.Close()
+
     if rows.Next() {
-        rows.Scan(&{{ camel $.PrimaryKey }})
+        if err := rows.Scan(&{{ camel $.PrimaryKey }}); err != nil {
+            return {{ camel $.PrimaryKey }}, rows.Scan(&{{ camel $.PrimaryKey }})
+        }
     }
 
-    return
+    return {{ camel $.PrimaryKey }}, nil
 }
 
 {{ else if eq $op.Name "update" }}
