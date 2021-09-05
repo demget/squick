@@ -16,7 +16,7 @@ import (
 
 type {{ .Model }} struct {
     {{- range $col := .Columns }}
-    {{ .Name }} {{ if .Nullable }}*{{ end }}{{ .Type }} `db:"{{ .DBName }}"{{ range .Tags }} {{ . }}:"{{ camel $col.Name }}{{ if $col.Nullable }},omitempty{{ end }}"{{ end }}`
+    {{ .Name }} {{ if .Nullable }}*{{ end }}{{ .Type }} `db:"{{ .DBName }}"{{ range .Tags }}{{ if . }} {{ . }}:"{{ camel $col.Name }}{{ if $col.Nullable }},omitempty{{ end }}"{{ end }}{{ end }}`
     {{- end }}
 
     db *DB
