@@ -33,6 +33,7 @@ type Context struct {
 
 	Verbose      bool
 	Ignore       bool
+	NoPK         bool
 	Driver       string
 	Package      string
 	Model        string
@@ -108,8 +109,8 @@ func (s *Squick) Make(ctx Context, stmt Stmt) error {
 	}
 
 	var primaryKey string
-	if err := ctx.DB.Get(&primaryKey, queryPrimary, stmt.Table); err != nil {
-		return err // TODO: make primary keys optional
+	if err := ctx.DB.Get(&primaryKey, queryPrimary, stmt.Table); err != nil && !ctx.NoPK {
+		return err
 	}
 
 	load := struct {

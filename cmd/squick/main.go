@@ -43,7 +43,7 @@ func main() {
 
 		force := flag.Bool("force", false, "")
 		maxOpen := flag.Int("max-open", 0, "")
-		maxIdle := flag.Int("max-idle", 2, "")
+		maxIdle := flag.Int("max-idle", 0, "")
 		flag.Parse(os.Args[2:])
 
 		pkg := "database"
@@ -95,6 +95,7 @@ func main() {
 
 		verbose := flag.Bool("v", false, "")
 		ignore := flag.Bool("ignore", false, "")
+		nopk := flag.Bool("nopk", false, "")
 		name := flag.String("name", "", "")
 		tags := flag.String("tags", "json", "")
 		updated := flag.String("updated", "", "")
@@ -109,6 +110,7 @@ func main() {
 		ctx := squick.Context{
 			Verbose:      *verbose,
 			Ignore:       *ignore,
+			NoPK:         *nopk,
 			DB:           db,
 			Package:      pkg,
 			Model:        *name,
