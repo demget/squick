@@ -102,11 +102,6 @@ func main() {
 		table := flag.String("table", "*", "")
 		flag.Parse(os.Args[2:])
 
-		stmt := squick.Parse(*table, flag.Args())
-		if *name == "" {
-			*name = stmt.Model()
-		}
-
 		ctx := squick.Context{
 			Verbose:      *verbose,
 			Ignore:       *ignore,
@@ -117,6 +112,8 @@ func main() {
 			Tags:         strings.Split(*tags, ","),
 			UpdatedField: *updated,
 		}
+
+		stmt := squick.Parse(*table, flag.Args())
 		if err := sq.Make(ctx, stmt); err != nil {
 			log.Fatal(err)
 		}

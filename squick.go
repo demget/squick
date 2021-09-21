@@ -113,6 +113,10 @@ func (s *Squick) Make(ctx Context, stmt Stmt) error {
 		return err
 	}
 
+	if ctx.Model == "" {
+		ctx.Model = plur.Singular(stmt.Model())
+	}
+
 	load := struct {
 		Context
 		Stmt
@@ -127,7 +131,7 @@ func (s *Squick) Make(ctx Context, stmt Stmt) error {
 	}{
 		Context:        ctx,
 		Stmt:           stmt,
-		Model:          plur.Singular(ctx.Model),
+		Model:          ctx.Model,
 		PrimaryKey:     primaryKey,
 		Blacklist:      []string{"created_at", "updated_at", primaryKey},
 		ColumnTypes:    make(map[string]string),

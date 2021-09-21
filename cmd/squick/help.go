@@ -42,7 +42,7 @@ Options:
     -ignore              Ignores unsupported column, interface{} type will be used instead.
     -nopk                Ignores primary key absence.
     -table               One specific table to generate model for, required.
-    -name                Generated model name, turned into singular PascalCase by default.
+    -name                Custom model name, singular of table name by default.
     -tags                Additional tags to define for the fields, json only by default.
     -updated             Indicates a field, which has to be set to the latest time on each updating query.
 
@@ -51,6 +51,6 @@ Operations:
     select               Select multiple items.       select:year -> db.BooksByYear(year)
     set                  Update a single field.       set:title   -> book.SetTitle(title)
     update               Update an entire model.      update      -> db.UpdateBook(id, database.Book{...})
-    insert               Insert a model.              insert      -> db.CreateBook(database.Book{...})
+    insert               Insert a model.              insert      -> db.InsertBook(database.Book{...})
     delete               Delete a model.              delete      -> db.DeleteBook(id)
     count                Count by a field.            count:year  -> db.CountBooksByYear(year)`
