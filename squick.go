@@ -9,6 +9,8 @@ import (
 	"os"
 	"text/template"
 
+	"github.com/go-openapi/swag"
+
 	"github.com/gertd/go-pluralize"
 	"github.com/jmoiron/sqlx"
 )
@@ -170,7 +172,7 @@ func (s *Squick) Make(ctx Context, stmt Stmt) error {
 
 		load.Columns = append(load.Columns, Column{
 			DBName:   col.Name,
-			Name:     toPascalCase(col.Name),
+			Name:     swag.ToGoName(col.Name),
 			Type:     colType,
 			Tags:     ctx.Tags,
 			Nullable: nullable,

@@ -8,6 +8,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/go-openapi/swag"
 	"github.com/iancoleman/strcase"
 )
 
@@ -18,8 +19,8 @@ var funcs = template.FuncMap{
 
 	"package": packageFromPath,
 	"in":      inStrings,
-	"camel":   toCamelCase,
-	"pascal":  toPascalCase,
+	"camel":   swag.ToVarName,
+	"pascal":  swag.ToGoName,
 	"plural":  plur.Plural,
 }
 
@@ -65,19 +66,4 @@ func replaceAcronyms(s, a string) string {
 	}
 
 	return strings.Join(words, "")
-}
-
-func toCamelCase(s string) string {
-	if s == "id" {
-		return s
-	}
-	s = strcase.ToLowerCamel(s)
-	s = replaceAcronyms(s, "Id")
-	return s
-}
-
-func toPascalCase(s string) string {
-	s = strcase.ToCamel(s)
-	s = replaceAcronyms(s, "Id")
-	return s
 }
