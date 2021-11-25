@@ -102,7 +102,7 @@ func (db *DB) Insert{{ $.Model }}({{ camel $.Model }} {{ $.Model }}) ({{ camel $
 
     if rows.Next() {
         if err := rows.Scan(&{{ camel $.PrimaryKey }}); err != nil {
-            return {{ camel $.PrimaryKey }}, rows.Scan(&{{ camel $.PrimaryKey }})
+            return {{ camel $.PrimaryKey }}, err
         }
     }
 
