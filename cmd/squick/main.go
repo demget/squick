@@ -44,6 +44,7 @@ func main() {
 		force := flag.Bool("force", false, "")
 		maxOpen := flag.Int("max-open", 0, "")
 		maxIdle := flag.Int("max-idle", 0, "")
+		ping := flag.Bool("ping", false, "")
 		flag.Parse(os.Args[2:])
 
 		pkg := "database"
@@ -64,6 +65,7 @@ func main() {
 		ctx := squick.Context{
 			MaxOpen: *maxOpen,
 			MaxIdle: *maxIdle,
+			Ping:    *ping,
 			Driver:  driver,
 			Package: pkg,
 		}

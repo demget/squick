@@ -17,6 +17,11 @@ func Open(url string) (*DB, error) {
     }
     {{ if .MaxOpen }}db.SetMaxOpenConns({{ .MaxOpen }}){{ end }}
     {{ if .MaxIdle }}db.SetMaxIdleConns({{ .MaxIdle }}){{ end }}
+    {{ if .Ping }}
+    if err := db.Ping(); err != nil {
+        return nil, err
+    }
+    {{ end }}
     return &DB{DB: db}, nil
 }
 
