@@ -147,6 +147,12 @@ func (db *DB) Delete{{ $.Model }}({{ camel $.PrimaryKey }} {{ index $.ColumnType
     return err
 }
 
+{{ else if eq $op.Name "exists" }}
+func (db *DB) {{ $.Model }}Exists({{ camel $.PrimaryKey }} {{ index $.ColumnTypes $.PrimaryKey }}) (exists bool, _ error) {
+    const query = `SELECT EXISTS(SELECT 1 FROM {{ $.Table }} WHERE {{ $.PrimaryKey }}=$1)`
+    return exists, db.Get(&exists, query, {{ camel $.PrimaryKey }})
+}
+
 {{ else if eq $op.Name "count" }}
 {{- range $arg := $op.Args -}}
 func (db *DB) Count{{ $.Model }}By{{ pascal $arg }}({{ camel $arg }} {{ index $.ColumnTypes $arg}}) (count int, _ error) {
