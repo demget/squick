@@ -70,11 +70,14 @@ func (p *postgresDB) Columns(ignore bool) ([]Column, error) {
 				imports[im] = struct{}{}
 			}
 			colType, ok := columnTypes[col.Type]
-			if !ok && !ignore {
-				return nil, fmt.Errorf("supported column type: %s", col.Type)
+			if !ok {
+				if !ignore {
+					return nil, fmt.Errorf("supported column type: %s", col.Type)
+				}
+				result[i].Type = "any"
+			} else {
+				result[i].Type = colType
 			}
-
-			result[i].Type = colType
 		}
 
 		if col.Type != "json" && col.Type != "ARRAY" {
