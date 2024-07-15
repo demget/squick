@@ -3,13 +3,18 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/demget/squick/internal/driver"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/demget/squick"
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
+)
+
+var (
+	driverName   = os.Getenv("SQUICK_DRIVER")
+	driverImport = os.Getenv("SQUICK_DRIVER_IMPORT")
+	dbURL        = os.Getenv("SQUICK_URL")
 )
 
 func main() {
@@ -24,8 +29,7 @@ func main() {
 		return
 	}
 
-	driver, ok := os.LookupEnv("SQUICK_DRIVER")
-	if !ok {
+	if driverName == "" {
 		log.Fatal("SQUICK_DRIVER environment key is unset")
 	}
 
@@ -66,7 +70,7 @@ func main() {
 			MaxOpen: *maxOpen,
 			MaxIdle: *maxIdle,
 			Ping:    *ping,
-			Driver:  driver,
+			Driver:  driverName,
 			Package: pkg,
 		}
 		if err := sq.Init(ctx); err != nil {
@@ -78,16 +82,14 @@ func main() {
 			return
 		}
 
-		dburl, ok := os.LookupEnv("SQUICK_URL")
-		if !ok {
+		if dbURL == "" {
 			log.Fatal("SQUICK_URL environment key is unset")
 		}
 
-		db, err := sqlx.Open(driver, dburl)
+		db, err := driver.New(driverName, dbURL)
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer db.Close()
 
 		initfile, _ := os.ReadFile(".squick")
 		pkg := string(initfile)
