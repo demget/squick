@@ -11,6 +11,8 @@ import (
     {{ range .Dependencies }}
     "{{ . }}"
     {{- end }}
+
+    {{ if .DriverHide }}_ {{ end }}"{{ .DriverImport }}"
 )
 {{ end }}
 
@@ -28,7 +30,8 @@ type {{ .Model }} struct {
 {{- range $arg := $op.Args -}}
 func ({{ $model }} *{{ $.Model }}) Set{{ pascal $arg }}({{ camel $arg }} {{ index $.ColumnTypes $arg}}) error {
     {{ $model }}.{{ pascal $arg }} = {{ if index $.ColumnNullable $arg }}&{{ end }}{{ camel $arg }}
-    const query = `UPDATE {{ $.Table }} SET {{ $arg }}=$1{{ if and $.UpdatedField (eq $arg $.UpdatedField | not) }}, {{ $.UpdatedField}}=now(){{ end }} WHERE {{ $.PrimaryKey }}=$2`
+    query := `UPDATE {{ $.Table }} SET {{ $arg }}=?{{ if and $.UpdatedField (eq $arg $.UpdatedField | not) }}, {{ $.UpdatedField}}=now(){{ end }} WHERE {{ $.PrimaryKey }}=?`
+    query = sqlx.DB.Rebind(query)
     _, err := {{ $model }}.db.Exec(query, {{ camel $arg }}, {{ $model }}.{{ pascal $.PrimaryKey }})
     return err
 }
@@ -38,7 +41,8 @@ func ({{ $model }} *{{ $.Model }}) Set{{ pascal $arg }}({{ camel $arg }} {{ inde
 {{- range $arg := $op.Args -}}
 func (db *DB) {{ $.Model }}By{{ pascal $arg }}({{ camel $arg }} {{ index $.ColumnTypes $arg}}) ({{ $model }} {{ $.Model }}, _ error) {
     {{ $model }}.db = db
-    const query = `SELECT * FROM {{ $.Table }} WHERE {{ $arg }}=$1`
+    query := `SELECT * FROM {{ $.Table }} WHERE {{ $arg }}=?`
+    query = db.Rebind(query)
     return {{ $model }}, db.Get(&{{ $model }}, query, {{ camel $arg }})
 }
 
@@ -46,7 +50,8 @@ func (db *DB) {{ $.Model }}By{{ pascal $arg }}({{ camel $arg }} {{ index $.Colum
 {{- else if eq $op.Name "select" }}
 {{- range $arg := $op.Args -}}
 func (db *DB) {{ plural $.Model }}By{{ pascal $arg }}({{ camel $arg }} {{ index $.ColumnTypes $arg}}) ([]{{ $.Model }}, error) {
-    const query = `SELECT * FROM {{ $.Table }} WHERE {{ $arg }}=$1`
+    query := `SELECT * FROM {{ $.Table }} WHERE {{ $arg }}=?`
+    query = db.Rebind(query)
 
     var {{ plural $model }} []{{ $.Model }}
     if err := db.Select(&{{ plural $model }}, query, {{ camel $arg }}); err != nil {
@@ -142,21 +147,24 @@ func (db *DB) Update{{ $.Model }}({{ camel $.PrimaryKey }} {{ index $.ColumnType
 
 {{ else if eq $op.Name "delete" }}
 func (db *DB) Delete{{ $.Model }}({{ camel $.PrimaryKey }} {{ index $.ColumnTypes $.PrimaryKey }}) error {
-    const query = `DELETE FROM {{ $.Table }} WHERE {{ $.PrimaryKey }}=$1`
+    query := `DELETE FROM {{ $.Table }} WHERE {{ $.PrimaryKey }}=?`
+    query = db.Rebind(query)
     _, err := db.Exec(query, {{ camel $.PrimaryKey }})
     return err
 }
 
 {{ else if eq $op.Name "exists" }}
 func (db *DB) {{ $.Model }}Exists({{ camel $.PrimaryKey }} {{ index $.ColumnTypes $.PrimaryKey }}) (exists bool, _ error) {
-    const query = `SELECT EXISTS(SELECT 1 FROM {{ $.Table }} WHERE {{ $.PrimaryKey }}=$1)`
+    query := `SELECT EXISTS(SELECT 1 FROM {{ $.Table }} WHERE {{ $.PrimaryKey }}=?)`
+    query = db.Rebind(query)
     return exists, db.Get(&exists, query, {{ camel $.PrimaryKey }})
 }
 
 {{ else if eq $op.Name "count" }}
 {{- range $arg := $op.Args -}}
 func (db *DB) Count{{ $.Model }}By{{ pascal $arg }}({{ camel $arg }} {{ index $.ColumnTypes $arg}}) (count int, _ error) {
-    const query = `SELECT COUNT(*) FROM {{ $.Table }} WHERE {{ $arg }}=$1`
+    query := `SELECT COUNT(*) FROM {{ $.Table }} WHERE {{ $arg }}=?`
+    query = db.Rebind(query)
     return count, db.Get(&count, query, {{ $arg }})
 }
 

@@ -4,15 +4,14 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
+	"github.com/demget/squick/internal/driver"
+	"github.com/go-openapi/swag"
 	"go/format"
 	"log"
 	"os"
 	"text/template"
 
-	"github.com/go-openapi/swag"
-
 	"github.com/gertd/go-pluralize"
-	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 )
 
@@ -30,7 +29,7 @@ type Squick struct {
 }
 
 type Context struct {
-	DB      *sqlx.DB
+	DB      driver.DB
 	MaxOpen int
 	MaxIdle int
 
@@ -87,40 +86,23 @@ func (s *Squick) Init(ctx Context) error {
 }
 
 func (s *Squick) Make(ctx Context, stmt Stmt) error {
-	const (
-		queryColumns = `
-			select column_name, data_type, udt_name, is_nullable
-			from information_schema.columns
-			where table_name=$1`
-		queryPrimary = `
-			select kcu.column_name
-			from information_schema.table_constraints tco
-			join information_schema.key_column_usage kcu
-				on kcu.constraint_name = tco.constraint_name
-				and kcu.constraint_schema = tco.constraint_schema
-				and kcu.constraint_name = tco.constraint_name
-			where kcu.table_name=$1 and tco.constraint_type='PRIMARY KEY'`
-	)
-
-	var cols []struct {
-		Name     string `db:"column_name"`
-		Type     string `db:"data_type"`
-		Udt      string `db:"udt_name"`
-		Nullable string `db:"is_nullable"`
-	}
-	if err := ctx.DB.Select(&cols, queryColumns, stmt.Table); err != nil {
-		return err
-	}
-
-	var primaryKey string
-	if err := ctx.DB.Get(&primaryKey, queryPrimary, stmt.Table); err != nil && !ctx.NoPK {
-		return err
-	}
-
 	if ctx.Model == "" {
 		ctx.Model = plur.Singular(stmt.Model())
 	}
 
+	ctx.DB.SetTable(stmt.Table)
+	cols, err := ctx.DB.Columns(ctx.Ignore)
+	if err != nil {
+		return err
+	}
+
+	primaryKey, err := ctx.DB.PrimaryKey()
+	if err != nil {
+		return err
+	}
+
+	imports := ctx.DB.Imports()
+	driverImport, driverHide := ctx.DB.DriverImport()
 	load := struct {
 		Context
 		Stmt
@@ -132,6 +114,8 @@ func (s *Squick) Make(ctx Context, stmt Stmt) error {
 		Blacklist      []string
 		ColumnTypes    map[string]string
 		ColumnNullable map[string]bool
+		DriverImport   string
+		DriverHide     bool
 	}{
 		Context:        ctx,
 		Stmt:           stmt,
@@ -140,45 +124,27 @@ func (s *Squick) Make(ctx Context, stmt Stmt) error {
 		Blacklist:      []string{"created_at", "updated_at", primaryKey},
 		ColumnTypes:    make(map[string]string),
 		ColumnNullable: make(map[string]bool),
+		Imports:        imports,
+		DriverImport:   driverImport,
+		DriverHide:     driverHide,
 	}
 
 	for _, col := range cols {
 		if ctx.Verbose {
-			log.Printf("table=%s column=%s type=%s udt=%s\n", stmt.Table, col.Name, col.Type, col.Udt)
+			log.Printf("table=%s column=%s type=%s\n", stmt.Table, col.Name, col.Type)
 		}
+	}
 
-		var nullable bool
-		if col.Type != "json" && col.Type != "ARRAY" {
-			nullable = col.Nullable == "YES"
-		}
-
-		colType, ok := columnTypes[col.Type]
-		if !ok {
-			if !ctx.Ignore {
-				return fmt.Errorf("unsupported %s column type", col.Type)
-			} else {
-				colType = "interface{}"
-			}
-		}
-
-		if imp, ok := columnImports[colType]; ok {
-			load.Imports = append(load.Imports, imp)
-		}
-		if dep, ok := columnDependencies[colType]; ok {
-			load.Dependencies = append(load.Dependencies, dep)
-		}
-
-		colType += udtTypes[col.Udt]
-		load.ColumnTypes[col.Name] = colType
-		load.ColumnNullable[col.Name] = nullable
-
-		load.Columns = append(load.Columns, Column{
+	load.Columns = make([]Column, len(cols))
+	for i, col := range cols {
+		load.Columns[i] = Column{
 			DBName:   col.Name,
 			Name:     swag.ToGoName(col.Name),
-			Type:     colType,
+			Type:     col.Type,
 			Tags:     ctx.Tags,
-			Nullable: nullable,
-		})
+			Nullable: col.Nullable,
+		}
+		load.ColumnTypes[col.Name] = col.Type
 	}
 
 	if load.UpdatedField == "" {
@@ -225,47 +191,4 @@ func (s *Squick) Make(ctx Context, stmt Stmt) error {
 	}
 
 	return os.WriteFile(fmt.Sprintf("%s/%s.go", ctx.Package, stmt.Table), data, 0700)
-}
-
-var columnTypes = map[string]string{
-	"bigint":            "int64",
-	"boolean":           "bool",
-	"character":         "string",
-	"character varying": "string",
-	"date":              "time.Time",
-	"integer":           "int",
-	"real":              "float64",
-	"serial":            "int",
-	"text":              "string",
-	"numeric":           "string",
-	"uuid":              "string",
-	"json":              "types.JSONText",
-	"ARRAY":             "pq.",
-	"USER-DEFINED":      "string", // TODO: distinguish enums
-
-	"time without time zone":      "time.Time",
-	"time with time zone":         "time.Time",
-	"timestamp without time zone": "time.Time",
-	"timestamp with time zone":    "time.Time",
-}
-
-var columnImports = map[string]string{
-	"time.Time": "time",
-}
-
-var columnDependencies = map[string]string{
-	"pq.":            "github.com/lib/pq",
-	"types.JSONText": "github.com/jmoiron/sqlx/types",
-}
-
-var udtTypes = map[string]string{
-	"_varchar": "StringArray",
-	"_text":    "StringArray",
-	"_int2":    "Int32Array",
-	"_int4":    "Int32Array",
-	"_int8":    "Int64Array",
-	"_int":     "Int32Array",
-	"_float4":  "Float64Array",
-	"_float":   "Float32Array",
-	"_bool":    "BoolArray",
 }
