@@ -7,6 +7,7 @@ import (
 	"go/format"
 	"log"
 	"os"
+	"path"
 	"text/template"
 
 	"github.com/go-openapi/swag"
@@ -40,6 +41,7 @@ type Context struct {
 	NoPK         bool
 	Driver       string
 	Package      string
+	PackagePath  []string
 	Model        string
 	Tags         []string
 	UpdatedField string
@@ -66,10 +68,10 @@ func New() (*Squick, error) {
 }
 
 func (s *Squick) Init(ctx Context) error {
-	if _, err := os.Stat(ctx.Package); errors.Is(err, os.ErrExist) {
+	if _, err := os.Stat(path.Join(ctx.PackagePath...)); errors.Is(err, os.ErrExist) {
 		return err
 	}
-	if err := os.Mkdir(ctx.Package, 0700); err != nil {
+	if err := os.Mkdir(path.Join(ctx.PackagePath...), 0700); err != nil {
 		return err
 	}
 
@@ -83,7 +85,7 @@ func (s *Squick) Init(ctx Context) error {
 		return err
 	}
 
-	return os.WriteFile(fmt.Sprintf("%s/%s.go", ctx.Package, ctx.Package), data, 0700)
+	return os.WriteFile(fmt.Sprintf("%s/%s.go", path.Join(ctx.PackagePath...), ctx.Package), data, 0700)
 }
 
 func (s *Squick) Make(ctx Context, stmt Stmt) error {

@@ -48,8 +48,10 @@ func main() {
 		flag.Parse(os.Args[2:])
 
 		pkg := "database"
+		pkgPath := []string{".", "database"}
 		if args := flag.Args(); len(args) > 0 {
-			pkg = args[0]
+			pkgPath = strings.Split(args[0], "/")
+			pkg = pkgPath[len(pkgPath)-1]
 		}
 
 		if *force {
@@ -63,11 +65,12 @@ func main() {
 		}
 
 		ctx := squick.Context{
-			MaxOpen: *maxOpen,
-			MaxIdle: *maxIdle,
-			Ping:    *ping,
-			Driver:  driver,
-			Package: pkg,
+			MaxOpen:     *maxOpen,
+			MaxIdle:     *maxIdle,
+			Ping:        *ping,
+			Driver:      driverName,
+			Package:     pkg,
+			PackagePath: pkgPath,
 		}
 		if err := sq.Init(ctx); err != nil {
 			log.Fatal(err)
